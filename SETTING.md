@@ -66,4 +66,8 @@ We set our environment as follows:
         ERROR: GLEW initalization error: Missing GL version
         ```
         To solve this problem, we use the comment [here](https://github.com/openai/mujoco-py/issues/44#issuecomment-399679237).
-        
+
+8. Install `h5py`.
+    ```bash
+    conda install h5py
+    ```        
