@@ -2,3 +2,4 @@ dependencies/mujoco-py/
 dependencies/gym/
 dependencies/baselines/
 expert_trajs/
+outputs/

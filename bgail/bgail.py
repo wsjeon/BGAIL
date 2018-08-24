@@ -90,7 +90,7 @@ def add_vtarg_and_adv(seg, gamma, lam):
 def learn(*,
         network, 
         env,
-        total_timesteps, 
+        max_iters,
         timesteps_per_batch=1024, # what to train on
         max_kl=0.001, 
         cg_iters=10,   
@@ -101,7 +101,7 @@ def learn(*,
         cg_damping=1e-2,
         vf_stepsize=3e-4,
         vf_iters =3,
-        max_episodes=0, max_iters=0,  # time constraint
+        max_episodes=0, total_timesteps=0,  # time constraint
         callback=None,
         load_path=None,
         **network_kwargs
