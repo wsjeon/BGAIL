@@ -20,20 +20,22 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     t = 0
     ac = env.action_space.sample()
     new = True
-    rew = 0.0
+    true_rew = 0.0
     ob = env.reset()
 
-    cur_ep_ret = 0
+    cur_ep_true_ret = 0
     cur_ep_len = 0
-    ep_rets = []
+    ep_true_rets = []
     ep_lens = []
 
+    max_horizon = horizon + 1000  # since maximum episode length is 1000 in MuJoCo env
+
     # Initialize history arrays
-    obs = np.array([ob for _ in range(horizon)])
-    rews = np.zeros(horizon, 'float32')
-    vpreds = np.zeros(horizon, 'float32')
-    news = np.zeros(horizon, 'int32')
-    acs = np.array([ac for _ in range(horizon)])
+    obs = np.array([ob for _ in range(max_horizon)])
+    true_rews = np.zeros(max_horizon, 'float32')
+    vpreds = np.zeros(max_horizon, 'float32')
+    news = np.zeros(max_horizon, 'int32')
+    acs = np.array([ac for _ in range(max_horizon)])
     prevacs = acs.copy()
 
     while True:
@@ -42,31 +44,32 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
-        if t > 0 and t % horizon == 0:
-            yield {"ob" : obs, "rew" : rews, "vpred" : vpreds, "new" : news,
-                    "ac" : acs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
-                    "ep_rets" : ep_rets, "ep_lens" : ep_lens}
+        if t >= horizon and new:
+            yield {"ob" : obs[:t], "true_rew" : true_rews[:t], "vpred" : vpreds[:t], "new" : news[:t],
+                    "ac" : acs[:t], "prevac" : prevacs[:t], "nextvpred": vpred * (1 - new),
+                    "ep_true_rets" : ep_true_rets, "ep_lens" : ep_lens}
             _, vpred, _, _ = pi.step(ob, stochastic=stochastic)
             # Be careful!!! if you change the downstream algorithm to aggregate
             # several of these batches, then be sure to do a deepcopy
-            ep_rets = []
+            ep_true_rets = []
             ep_lens = []
-        i = t % horizon
-        obs[i] = ob
-        vpreds[i] = vpred
-        news[i] = new
-        acs[i] = ac
-        prevacs[i] = prevac
+            t = 0
 
-        ob, rew, new, _ = env.step(ac)
-        rews[i] = rew
+        obs[t] = ob
+        vpreds[t] = vpred
+        news[t] = new
+        acs[t] = ac
+        prevacs[t] = prevac
 
-        cur_ep_ret += rew
+        ob, true_rew, new, _ = env.step(ac)
+        true_rews[t] = true_rew
+
+        cur_ep_true_ret += true_rew
         cur_ep_len += 1
         if new:
-            ep_rets.append(cur_ep_ret)
+            ep_true_rets.append(cur_ep_true_ret)
             ep_lens.append(cur_ep_len)
-            cur_ep_ret = 0
+            cur_ep_true_ret = 0
             cur_ep_len = 0
             ob = env.reset()
         t += 1
