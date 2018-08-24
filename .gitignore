@@ -1,1 +1,2 @@
-/dependencies
+dependencies/mujoco-py/
+dependencies/gym/
