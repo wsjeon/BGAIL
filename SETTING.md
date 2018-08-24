@@ -44,15 +44,15 @@ We set our environment as follows:
     pip install -e .[classical_control,robotics]
     ```
 
-5. Install Baselines.
+5. Install TensorFlow with GPU support.
+    ```bash
+    pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.10.0-cp36-cp36m-linux_x86_64.whl
+    ```
+
+6. Install Baselines.
     ```bash
     cd ../baselines/
     pip install -e .
-    ```
-    
-6. Install TensorFlow with GPU support.
-    ```bash
-    pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.10.0-cp36-cp36m-linux_x86_64.whl
     ```
     
 7. Test
