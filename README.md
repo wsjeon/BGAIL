@@ -1,4 +1,4 @@
-# Implementation of Bayesian Generative Adversarial Imitation Learning (GAIL)
+# Implementation of Bayesian Generative Adversarial Imitation Learning (BGAIL)
 
 ## Requirements
 -   python 3.6.6
@@ -17,3 +17,14 @@
     - Baseline implementation of GAIL
 -   [wsjeon/SVGD](https://github.com/wsjeon/SVGD)
     - TensorFlow implementation of Stein variational gradient descent (SVGD)
+
+## Expert trajecotires
+We use the expert trajectories by using the code given by [openai/imitation](https://github.com/openai/imitation).
+
+1.  Download expert trajectories from [this link](https://www.dropbox.com/sh/9uort7161cz93v9/AACJapyvTxDsFC1QLqP1nYNNa?dl=0) to `dataset/`.
+2.  Run
+    ```bash
+    python dataset/convert_h5_to_pkl.py
+    ```
+    to convert expert trajectories into `pkl` files. 
+
