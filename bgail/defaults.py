@@ -4,7 +4,6 @@ from baselines.common.models import mlp
 def mujoco():
     # TODO g_step, d_step? difference between defaults and args?
     return dict(
-        save_path='./outputs',
         network = mlp(num_hidden=100, num_layers=2),
         max_iters=2001,
         timesteps_per_batch=1000,

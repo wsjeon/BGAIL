@@ -107,7 +107,6 @@ def learn(*,
         g_step=1,
         d_step=1,
         adversary_entcoeff=1e-3,
-        num_particles=5,
         d_stepsize=3e-4,
         max_episodes=0, total_timesteps=0,  # time constraint
         callback=None,
@@ -158,8 +157,8 @@ def learn(*,
     learnt model
 
     '''
-    
-    
+
+
     nworkers = MPI.COMM_WORLD.Get_size()
     if nworkers > 1:
         raise NotImplementedError
@@ -171,9 +170,9 @@ def learn(*,
             inter_op_parallelism_threads=cpus_per_worker,
             intra_op_parallelism_threads=cpus_per_worker
     ))
-    
 
     policy = build_policy(env, network, value_network='copy', **network_kwargs)
+    classifier = build_classifier(env, network, **network_kwargs)
     set_global_seeds(seed)
 
     np.set_printoptions(precision=3)
