@@ -93,7 +93,7 @@ def learn(*,
         max_iters,
         timesteps_per_batch=1024, # what to train on
         max_kl=0.001, 
-        cg_iters=10,   
+        cg_iters=10,
         gamma=0.99, 
         lam=1.0, # advantage estimation
         seed=None,
@@ -101,6 +101,14 @@ def learn(*,
         cg_damping=1e-2,
         vf_stepsize=3e-4,
         vf_iters =3,
+        expert_trajs_path='./expert_trajs',
+        ret_threshold=0.0,
+        traj_limitation=500,
+        g_step=1,
+        d_step=1,
+        adversary_entcoeff=1e-3,
+        num_particles=5,
+        d_stepsize=3e-4,
         max_episodes=0, total_timesteps=0,  # time constraint
         callback=None,
         load_path=None,
@@ -153,6 +161,8 @@ def learn(*,
     
     
     nworkers = MPI.COMM_WORLD.Get_size()
+    if nworkers > 1:
+        raise NotImplementedError
     rank = MPI.COMM_WORLD.Get_rank()
 
     cpus_per_worker = 1
