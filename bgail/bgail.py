@@ -13,6 +13,7 @@ from baselines.common.mpi_adam import MpiAdam
 from baselines.common.cg import cg
 from baselines.common.input import observation_placeholder
 from baselines.common.policies import build_policy
+from classifiers import build_classifier
 from contextlib import contextmanager
 
 def traj_segment_generator(pi, env, horizon, stochastic):
@@ -88,7 +89,8 @@ def add_vtarg_and_adv(seg, gamma, lam):
     seg["tdlamret"] = seg["adv"] + seg["vpred"]
 
 def learn(*,
-        network, 
+        policy_network,
+        classifier_network,
         env,
         max_iters,
         timesteps_per_batch=1024, # what to train on
@@ -107,11 +109,12 @@ def learn(*,
         g_step=1,
         d_step=1,
         adversary_entcoeff=1e-3,
+        num_particles=5,
         d_stepsize=3e-4,
         max_episodes=0, total_timesteps=0,  # time constraint
         callback=None,
         load_path=None,
-        **network_kwargs
+        **policy_network_kwargs
         ):
     '''
     learn a policy function with TRPO algorithm
@@ -171,8 +174,8 @@ def learn(*,
             intra_op_parallelism_threads=cpus_per_worker
     ))
 
-    policy = build_policy(env, network, value_network='copy', **network_kwargs)
-    classifier = build_classifier(env, network, **network_kwargs)
+
+    policy = build_policy(env, policy_network, value_network='copy', **policy_network_kwargs)
     set_global_seeds(seed)
 
     np.set_printoptions(precision=3)
@@ -239,6 +242,11 @@ def learn(*,
     compute_fvp = U.function([flat_tangent, ob, ac, atarg], fvp)
     compute_vflossandgrad = U.function([ob, ret], U.flatgrad(vferr, vf_var_list))
 
+
+    D = build_classifier(env, classifier_network, num_particles)
+
+
+
     @contextmanager
     def timed(msg):
         if rank == 0:
@@ -304,7 +312,14 @@ def learn(*,
         atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
 
         if hasattr(pi, "ret_rms"): pi.ret_rms.update(tdlamret)
-        if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
+        # TODO: I think there's no input rms... because there's no ob_rms, but rms! Thus, following line should be checked.
+        # TODO: That is, if input normalization is done, we should stack in `assert False`
+        # TODO: My conjecture is that both "ob_rms" should be changed into "rms" in our case.
+        if hasattr(pi, "ob_rms"): assert False; pi.ob_rms.update(ob) # update running mean/std for policy
+        # TODO: rms update for discriminator
+        # TODO: similar issue as above.
+        if hasattr(classifier, "ob_rms"): assert False; classifier.ob_rms.update(ob)
+        if hasattr(classifier, "ac_rms"): assert False; classifier.ac_rms.update(ac)
 
         args = seg["ob"], seg["ac"], atarg
         fvpargs = [arr[::5] for arr in args]
