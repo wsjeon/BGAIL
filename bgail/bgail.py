@@ -15,6 +15,8 @@ from baselines.common.input import observation_placeholder
 from baselines.common.policies import build_policy
 from classifiers import build_classifier
 from contextlib import contextmanager
+import sys; sys.path.insert(0, '..')
+from optimizers import SVGD
 
 def traj_segment_generator(pi, env, horizon, stochastic):
     # Initialize state variables
@@ -244,8 +246,11 @@ def learn(*,
 
 
     D = build_classifier(env, classifier_network, num_particles)
+    grads_list, vars_list = D.get_grads_and_vars()
 
+    def make_gradient_optimizer(): return tf.train.AdamOptimizer(learning_rate=d_stepsize)
 
+    optimizer = SVGD(grads_list, vars_list, make_gradient_optimizer)
 
     @contextmanager
     def timed(msg):
