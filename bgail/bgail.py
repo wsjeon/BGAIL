@@ -77,6 +77,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ob = env.reset()
         t += 1
 
+
 def add_vtarg_and_adv(seg, gamma, lam):
     new = np.append(seg["new"], 0) # last element is only used for last vtarg, but we already zeroed it if last new = 1
     vpred = np.append(seg["vpred"], seg["nextvpred"])
@@ -90,34 +91,35 @@ def add_vtarg_and_adv(seg, gamma, lam):
         gaelam[t] = lastgaelam = delta + gamma * lam * nonterminal * lastgaelam
     seg["tdlamret"] = seg["adv"] + seg["vpred"]
 
+
 def learn(*,
-        policy_network,
-        classifier_network,
-        env,
-        max_iters,
-        timesteps_per_batch=1024, # what to train on
-        max_kl=0.001, 
-        cg_iters=10,
-        gamma=0.99, 
-        lam=1.0, # advantage estimation
-        seed=None,
-        entcoeff=0.0,
-        cg_damping=1e-2,
-        vf_stepsize=3e-4,
-        vf_iters =3,
-        expert_trajs_path='./expert_trajs',
-        ret_threshold=0.0,
-        traj_limitation=500,
-        g_step=1,
-        d_step=1,
-        adversary_entcoeff=1e-3,
-        num_particles=5,
-        d_stepsize=3e-4,
-        max_episodes=0, total_timesteps=0,  # time constraint
-        callback=None,
-        load_path=None,
-        **policy_network_kwargs
-        ):
+          policy_network,
+          classifier_network,
+          env,
+          max_iters,
+          timesteps_per_batch=1024, # what to train on
+          max_kl=0.001,
+          cg_iters=10,
+          gamma=0.99,
+          lam=1.0, # advantage estimation
+          seed=None,
+          entcoeff=0.0,
+          cg_damping=1e-2,
+          vf_stepsize=3e-4,
+          vf_iters =3,
+          expert_trajs_path='./expert_trajs',
+          ret_threshold=0.0,
+          traj_limitation=500,
+          g_step=1,
+          d_step=1,
+          classifier_entcoeff=1e-3,
+          num_particles=5,
+          d_stepsize=3e-4,
+          max_episodes=0, total_timesteps=0,  # time constraint
+          callback=None,
+          load_path=None,
+          **policy_network_kwargs
+          ):
     '''
     learn a policy function with TRPO algorithm
     
@@ -163,7 +165,6 @@ def learn(*,
 
     '''
 
-
     nworkers = MPI.COMM_WORLD.Get_size()
     if nworkers > 1:
         raise NotImplementedError
@@ -175,7 +176,6 @@ def learn(*,
             inter_op_parallelism_threads=cpus_per_worker,
             intra_op_parallelism_threads=cpus_per_worker
     ))
-
 
     policy = build_policy(env, policy_network, value_network='copy', **policy_network_kwargs)
     set_global_seeds(seed)
@@ -244,13 +244,10 @@ def learn(*,
     compute_fvp = U.function([flat_tangent, ob, ac, atarg], fvp)
     compute_vflossandgrad = U.function([ob, ret], U.flatgrad(vferr, vf_var_list))
 
-
-    D = build_classifier(env, classifier_network, num_particles)
+    D = build_classifier(env, classifier_network, num_particles, classifier_entcoeff)
     grads_list, vars_list = D.get_grads_and_vars()
 
-    def make_gradient_optimizer(): return tf.train.AdamOptimizer(learning_rate=d_stepsize)
-
-    optimizer = SVGD(grads_list, vars_list, make_gradient_optimizer)
+    optimizer = SVGD(grads_list, vars_list, lambda: tf.train.AdamOptimizer(learning_rate=d_stepsize))
 
     @contextmanager
     def timed(msg):
@@ -291,7 +288,7 @@ def learn(*,
     rewbuffer = deque(maxlen=40) # rolling buffer for episode rewards
 
     if sum([max_iters>0, total_timesteps>0, max_episodes>0])==0:
-        # noththing to be done
+        # nothing to be done
         return pi
 
     assert sum([max_iters>0, total_timesteps>0, max_episodes>0]) < 2, \
@@ -309,6 +306,9 @@ def learn(*,
 
         with timed("sampling"):
             seg = seg_gen.__next__()
+
+        # TODO: we should add "rew" generator here!
+
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
