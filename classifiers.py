@@ -5,32 +5,35 @@ from baselines.common.input import observation_placeholder
 from baselines.common.mpi_running_mean_std import RunningMeanStd
 from baselines.a2c.utils import fc
 
+
 def logsigmoid(a):
     return - tf.nn.softplus(-a)  # Equivalent to tf.log(tf.sigmoid(a))
+
 
 def logit_bernoulli_entropy(logits):
     ent = (1. - tf.nn.sigmoid(logits)) * logits - logsigmoid(logits)
     return ent
 
+
 class TransitionClassifier(object):
-    def __init__(self, env, classifier_network, num_particles, classifier_entropy, normalize_observations=True):
+    def __init__(self, env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):
         self.env = env
         self.ob_space, self.ac_space = env.observation_space, env.action_space
         self.num_particles = num_particles
-        self.classifier_entropy = classifier_entropy
+        self.classifier_entcoeff = classifier_entcoeff
         self.Xs, self.As, self.Ls, inputs = self.make_placeholders_and_inputs()
         if normalize_observations:
             inputs, self.rms = self.normalize_inputs(inputs)
         self.grads_list, self.vars_list, self.reward_op = self.make_objectives_and_gradients(inputs, classifier_network)
 
-    def make_placeholder(self):
+    def make_placeholders_and_inputs(self):
         Xs, As, Ls, inputs = {}, {}, {}, {}
         for c in ['a', 'e']:
             Xs[c] = observation_placeholder(self.ob_space, name='Ob_'+c)
             As[c] = observation_placeholder(self.ac_space, name='Ac_'+c)
             Ls[c] = tf.placeholder(tf.int32, [None], name='Ls_'+c)
             if isinstance(self.ac_space, spaces.Box):
-                inputs[c] = tf.concat(Xs[c], As[c], axis=1)
+                inputs[c] = tf.concat([Xs[c], As[c]], axis=1)
             elif isinstance(self.ac_space, spaces.Discrete):
                 inputs[c] = Xs[c]
             else:
@@ -60,8 +63,8 @@ class TransitionClassifier(object):
         else:
             raise NotImplementedError
 
-        def _make_logits(inputs, action_placeholder):
-            classifier_latent, recurrent_tensors = classifier_network(inputs)
+        def _make_logits(input, action_placeholder):
+            classifier_latent, recurrent_tensors = classifier_network(input)
             if recurrent_tensors is not None:
                 raise NotImplementedError
 
@@ -79,10 +82,10 @@ class TransitionClassifier(object):
         reward_op = tf.constant(0., dtype=tf.float32)
 
         for i in range(self.num_particles):
+            logits, objectives = {}, {}
             for c in ['a', 'e']:
-                logits, objectives = {}, {}
                 with tf.variable_scope('classifier{}'.format(i), reuse=tf.AUTO_REUSE):
-                    logits[c] = _make_logits(inputs, self.As[c])
+                    logits[c] = _make_logits(inputs[c], self.As[c])
                     labels = tf.zeros_like(logits[c]) if c is 'a' else tf.ones_like(logits[c])
                     neg_cross_ents = - tf.nn.sigmoid_cross_entropy_with_logits(logits=logits[c], labels=labels)
 
@@ -90,22 +93,21 @@ class TransitionClassifier(object):
                     output_ta = tf.TensorArray(tf.float32, 0, True)
                     time = tf.constant(0, dtype=tf.int32)
 
-                    def cond(time, output_ta): return tf.less(time, tf.shape(self.Ls[c])[0])
+                    def cond(t, ta): return tf.less(t, tf.shape(self.Ls[c])[0])
 
-                    def body(time, output_ta):
-                        output_ta = output_ta.write(time, tf.reduce_sum(input_ta.read(time)))
-                        time = time + 1
-                        return time, output_ta
+                    def body(t, ta):
+                        ta = ta.write(t, tf.reduce_sum(input_ta.read(t)))
+                        t = t + 1
+                        return t, ta
 
                     _, output_ta = tf.while_loop(cond=cond, body=body, loop_vars=[time, output_ta], parallel_iterations=100)
 
                     objectives[c] = tf.reduce_logsumexp(output_ta.stack())
-
-            classifier_entropy = tf.reduce_mean(logit_bernoulli_entropy(tf.concat([logits['a'], logits['c']], axis=0)))
-            sum_objective = objectives['a'] + objectives['c'] + self.classifier_entcoeff * classifier_entropy
+            classifier_entropy = tf.reduce_mean(logit_bernoulli_entropy(tf.concat([logits['a'], logits['e']], axis=0)))
+            sum_objective = objectives['a'] + objectives['e'] + self.classifier_entcoeff * classifier_entropy
             variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='classifier{}'.format(i))
             variables_list.append(variables)
-            gradients = tf.gradient(sum_objective, variables)
+            gradients = tf.gradients(sum_objective, variables)
             gradients_list.append(gradients)
 
             if 'MountainCar' in str(self.env):
@@ -128,7 +130,8 @@ class TransitionClassifier(object):
 
         return sess.run(self.reward_op, feed_dict)
 
-def build_classifier(env, classifier_network, num_particles, normalize_observations=True):
+
+def build_classifier(env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):
     if isinstance(classifier_network, str):
         raise NotImplementedError
 
@@ -143,6 +146,7 @@ def build_classifier(env, classifier_network, num_particles, normalize_observati
                 env=env,
                 classifier_network=classifier_network,
                 num_particles=num_particles,
+                classifier_entcoeff=classifier_entcoeff,
                 normalize_observations=normalize_observations
                 )
         elif isinstance(ac_space, spaces.Discrete):
