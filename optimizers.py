@@ -40,7 +40,7 @@ class SVGD(object):
         # kernel computation
         Kxy = tf.exp(- pairwise_dists / h ** 2 / 2)
         dxkxy = - tf.matmul(Kxy, stacked_vars)
-        sumkxy = tf.reduce_sum(Kxy, axis=1, keep_dims=True)
+        sumkxy = tf.reduce_sum(Kxy, axis=1, keepdims=True)
         dxkxy = (dxkxy + stacked_vars * sumkxy) / tf.pow(h, 2)
         return Kxy, dxkxy
 
