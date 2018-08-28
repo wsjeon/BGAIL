@@ -4,8 +4,8 @@ from baselines.common.models import mlp
 def mujoco():
     # TODO g_step, d_step? difference between defaults and args?
     return dict(
-        policy_network = mlp(num_hidden=100, num_layers=2),
-        classifier_network = mlp(num_hidden=100, num_layers=2),
+        policy_network=mlp(num_hidden=100, num_layers=2),
+        classifier_network=mlp(num_hidden=100, num_layers=2),
         max_iters=2001,
         timesteps_per_batch=1000,
         max_kl=0.01,
@@ -20,9 +20,9 @@ def mujoco():
         ret_threshold=0.0,
         traj_limitation=500,
         g_step=1,
-        d_step=1,
-        adversary_entcoeff=1e-3,
+        d_step=5,
+        classifier_entcoeff=1e-3,
         num_particles=5,
         d_stepsize=0.01,
-        normalize_observations=True,
+        normalize_observations=True
     )
