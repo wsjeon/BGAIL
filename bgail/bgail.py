@@ -339,7 +339,10 @@ def learn(*,
         with timed("sampling"):
             seg = seg_gen.__next__()
 
-        seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
+        # TODO: check whether TRPO works well or not.
+        seg["rew"] = seg["true_rew"]
+        # # TODO: check whether BGAIL works well or not.
+        # seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
 
         add_vtarg_and_adv(seg, gamma, lam)
 
