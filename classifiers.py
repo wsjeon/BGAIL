@@ -89,8 +89,8 @@ class TransitionClassifier(object):
                     labels = tf.zeros_like(logits[c]) if c is 'a' else tf.ones_like(logits[c])
                     neg_cross_ents = - tf.nn.sigmoid_cross_entropy_with_logits(logits=logits[c], labels=labels)
 
-                    input_ta = tf.TensorArray(tf.float32, 0, True).split(neg_cross_ents, self.Ls[c])
-                    output_ta = tf.TensorArray(tf.float32, 0, True)
+                    input_ta = tf.TensorArray(tf.float32, size=0, dynamic_size=True, infer_shape=False).split(neg_cross_ents, self.Ls[c])
+                    output_ta = tf.TensorArray(tf.float32, size=0, dynamic_size=True, infer_shape=False)
                     time = tf.constant(0, dtype=tf.int32)
 
                     def cond(t, ta): return tf.less(t, tf.shape(self.Ls[c])[0])
