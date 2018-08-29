@@ -25,7 +25,7 @@ if __name__ == '__main__':
         print('-'*50)
         print(task)
         print('-'*50)
-        obs, acs, rews, ep_lens = load_dataset('./expeert_trajs/trajs_{}.h5'.format(task))
+        obs, acs, rews, ep_lens = load_dataset('./expert_trajs/trajs_{}.h5'.format(task))
         sample_trajs = []
         for i in range(obs.shape[0]):
             ob, ac, rew, ep_len = obs[i], acs[i], rews[i], ep_lens[i]
