@@ -18,6 +18,7 @@ def logit_bernoulli_entropy(logits):
 class TransitionClassifier(object):
     def __init__(self, env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):
         self.env = env
+        self.env_id = env.venv.envs[0].env.env.spec.id
         self.ob_space, self.ac_space = env.observation_space, env.action_space
         self.num_particles = num_particles
         self.classifier_entcoeff = classifier_entcoeff
@@ -110,7 +111,7 @@ class TransitionClassifier(object):
             gradients = tf.gradients(sum_objective, variables)
             gradients_list.append(gradients)
 
-            if 'MountainCar' in str(self.env):
+            if self.env_id.split('-')[0] in ['MountainCar']:
                 reward_op += tf.log(tf.nn.sigmoid(logits['a']) + 1e-8)
             else:
                 reward_op += - tf.log(1. - tf.nn.sigmoid(logits['a']) + 1e-8)
