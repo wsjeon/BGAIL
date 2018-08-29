@@ -23,5 +23,6 @@ def mujoco():
         classifier_entcoeff=1e-3,
         num_particles=5,
         d_stepsize=0.01,
-        normalize_observations=True
+        normalize_observations=True,
+        observation_dependent_var=True
     )

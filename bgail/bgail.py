@@ -12,7 +12,7 @@ from baselines.common import set_global_seeds
 from baselines.common.mpi_adam import MpiAdam
 from baselines.common.cg import cg
 from baselines.common.input import observation_placeholder
-from baselines.common.policies import build_policy
+from policies import build_policy
 from classifiers import build_classifier
 from contextlib import contextmanager
 import sys; sys.path.insert(0, '..')
