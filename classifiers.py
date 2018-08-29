@@ -80,8 +80,7 @@ class TransitionClassifier(object):
 
         gradients_list, variables_list, neg_cross_ents_list = [], [], []
 
-        reward_op = tf.constant(0., dtype=tf.float32)
-
+        reward_ops = []
         for i in range(self.num_particles):
             logits, objectives = {}, {}
             for c in ['a', 'e']:
@@ -112,11 +111,11 @@ class TransitionClassifier(object):
             gradients_list.append(gradients)
 
             if self.env_id.split('-')[0] in ['MountainCar']:
-                reward_op += tf.log(tf.nn.sigmoid(logits['a']) + 1e-8)
+                reward_ops.append(tf.log(tf.nn.sigmoid(logits['a'])+1e-8))
             else:
-                reward_op += - tf.log(1. - tf.nn.sigmoid(logits['a']) + 1e-8)
+                reward_ops.append(-tf.log(1.-tf.nn.sigmoid(logits['a'])+1e-8))
 
-        return gradients_list, variables_list, reward_op / self.num_particles
+        return gradients_list, variables_list, tf.reduce_mean(tf.concat(reward_ops, axis=1), axis=1)
 
     def get_grads_and_vars(self):
         return self.grads_list, self.vars_list
