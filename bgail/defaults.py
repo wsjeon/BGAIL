@@ -17,7 +17,7 @@ def mujoco():
         vf_stepsize=1e-3,
         vf_iters=5,
         expert_trajs_path='./expert_trajs',
-        num_expert_trajs=500,
+        num_expert_trajs=25,
         g_step=1,
         d_step=5,
         classifier_entcoeff=1e-3,
