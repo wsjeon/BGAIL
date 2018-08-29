@@ -34,4 +34,4 @@ if __name__ == '__main__':
     
         sample_ep_rets = [traj["ep_ret"] for traj in sample_trajs]
         print('Expert average return (pkl): {}'.format(sum(sample_ep_rets) / len(sample_ep_rets)))
-        pkl.dump(sample_trajs, open("trajs_{}.pkl".format(task), "wb"))
+        pkl.dump(sample_trajs, open("./expert_trajs/trajs_{}.pkl".format(task), "wb"))
