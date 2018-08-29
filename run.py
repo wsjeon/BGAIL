@@ -1,10 +1,32 @@
 import baselines.run as run
+import tensorflow as tf
+import gym
 from baselines.common.cmd_util import arg_parser
+from baselines.common.tf_util import get_session
 
+
+def build_env(args):
+    env_type, env_id = run.get_env_type(args.env)
+    if env_type == 'mujoco':
+        get_session(tf.ConfigProto(allow_soft_placement=True,
+                                   intra_op_parallelism_threads=1,
+                                   inter_op_parallelism_threads=1))
+
+        env = gym.make(env_id)
+        env.seed(args.seed)
+
+    elif env_type == 'classic_control':
+        env = gym.make(env_id)
+        env.seed(args.seed)
+
+    else:
+        raise NotImplementedError
+
+    return env
 
 def common_arg_parser():
     parser = arg_parser()
-    parser.add_argument('--env', help='environment ID', type=str, default='Hopper-v2')
+    parser.add_argument('--env', help='environment ID', type=str, default='Hopper-v1')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--alg', help='Algorithm', type=str, default='bgail')
     parser.add_argument('--num_env', help='Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco', default=None, type=int)
@@ -52,6 +74,7 @@ def train(args, extra_args):
 
 
 if __name__ == '__main__':
+    run.build_env = build_env
     run.get_alg_module = get_alg_module
     run.train = train
     run.common_arg_parser = common_arg_parser

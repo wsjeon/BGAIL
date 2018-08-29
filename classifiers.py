@@ -1,24 +1,15 @@
 from gym import spaces
 import tensorflow as tf
 import numpy as np
-from baselines.common.input import observation_placeholder
+from utils import observation_placeholder, logit_bernoulli_entropy
 from baselines.common.mpi_running_mean_std import RunningMeanStd
 from baselines.a2c.utils import fc
-
-
-def logsigmoid(a):
-    return - tf.nn.softplus(-a)  # Equivalent to tf.log(tf.sigmoid(a))
-
-
-def logit_bernoulli_entropy(logits):
-    ent = (1. - tf.nn.sigmoid(logits)) * logits - logsigmoid(logits)
-    return ent
 
 
 class TransitionClassifier(object):
     def __init__(self, env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):
         self.env = env
-        self.env_id = env.venv.envs[0].env.env.spec.id
+        self.env_id = env.env.spec.id
         self.ob_space, self.ac_space = env.observation_space, env.action_space
         self.num_particles = num_particles
         self.classifier_entcoeff = classifier_entcoeff
