@@ -18,6 +18,9 @@ from contextlib import contextmanager
 import sys; sys.path.insert(0, '..')
 from optimizers import SVGD
 from gym import spaces
+import os
+import pickle
+import random
 
 def traj_segment_generator(pi, env, horizon, stochastic):
     # Initialize state variables
@@ -78,23 +81,34 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ob = env.reset()
         t += 1
 
-def env_name(env):
-    for task in ['Hopper', 'Walker', 'HalfCheetah', 'Ant', 'Humanoid']:
-        if task in str(env):
-
-
 def expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, num_expert_trajs):
-    if 'Hopper' in
-    # TODO: expert traj sampler
+    env_id = env.venv.envs[0].env.env.spec.id
+    env_name = env_id.split('-')[0]
+    if env_name not in ['Hopper', 'Walker', 'HalfCheetah', 'Ant', 'Humanoid',
+                        'CartPole', 'MountainCar', 'Acrobot']:
+        raise NotImplementedError
 
-    # TODO: some initializations
+    path = os.path.join(expert_trajs_path, 'trajs_'+env_name.lower()+'.pkl')
+    with open(path, 'rb') as f:
+        expert_trajs = pickle.load(f)[0:num_expert_trajs]
 
+    obs, acs, ep_lens, ep_true_rets = [], [], [], []
+    i = 0
     while True:
+        ob, ac, ep_true_ret = expert_trajs[i]["ob"], expert_trajs[i]["ac"], expert_trajs[i]["ep_ret"]
+        obs.append(ob)
+        acs.append(ac)
+        ep_lens.append(ob.shape[0])
+        ep_true_rets.append(ep_true_ret)
+        if sum(ep_lens) >= timesteps_per_batch:
+            yield {"ob": np.concatenate(obs, axis=0), "ac": np.concatenate(acs, axis=0),
+                   "ep_true_rets": ep_true_rets, "ep_lens": ep_lens}
+            obs, acs, ep_lens, ep_true_rets = [], [], [], []
 
-        if some_condition_hold:
-            yield {"ob": ob, "ac": ac, "rew": rew, "ep_true_ret": ep_true_ret, "ep_len": ep_len}
-
-
+        i += 1
+        if i == num_expert_trajs:
+            random.shuffle(expert_trajs)
+            i = 0
 
 def add_vtarg_and_adv(seg, gamma, lam):
     new = np.append(seg["new"], 0) # last element is only used for last vtarg, but we already zeroed it if last new = 1
