@@ -17,6 +17,7 @@ from classifiers import build_classifier
 from contextlib import contextmanager
 import sys; sys.path.insert(0, '..')
 from optimizers import SVGD
+from gym import spaces
 
 def traj_segment_generator(pi, env, horizon, stochastic):
     # Initialize state variables
@@ -77,6 +78,23 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ob = env.reset()
         t += 1
 
+def env_name(env):
+    for task in ['Hopper', 'Walker', 'HalfCheetah', 'Ant', 'Humanoid']:
+        if task in str(env):
+
+
+def expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, num_expert_trajs):
+    if 'Hopper' in
+    # TODO: expert traj sampler
+
+    # TODO: some initializations
+
+    while True:
+
+        if some_condition_hold:
+            yield {"ob": ob, "ac": ac, "rew": rew, "ep_true_ret": ep_true_ret, "ep_len": ep_len}
+
+
 
 def add_vtarg_and_adv(seg, gamma, lam):
     new = np.append(seg["new"], 0) # last element is only used for last vtarg, but we already zeroed it if last new = 1
@@ -108,8 +126,7 @@ def learn(*,
           vf_stepsize=3e-4,
           vf_iters =3,
           expert_trajs_path='./expert_trajs',
-          ret_threshold=0.0,
-          traj_limitation=500,
+          num_expert_trajs=500,
           g_step=1,
           d_step=1,
           classifier_entcoeff=1e-3,
@@ -279,6 +296,7 @@ def learn(*,
     # Prepare for rollouts
     # ----------------------------------------
     seg_gen = traj_segment_generator(pi, env, timesteps_per_batch, stochastic=True)
+    seg_gen_e = expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, num_expert_trajs)
 
     episodes_so_far = 0
     timesteps_so_far = 0
@@ -311,23 +329,12 @@ def learn(*,
 
         add_vtarg_and_adv(seg, gamma, lam)
 
-        # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
-        ob, ac, atarg, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]
+        ob, ac, ep_lens, atarg, tdlamret = seg["ob"], seg["ac"], seg["ep_lens"], seg["adv"], seg["tdlamret"]
         vpredbefore = seg["vpred"] # predicted value function before udpate
         atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
 
         if hasattr(pi, "ret_rms"): pi.ret_rms.update(tdlamret)
         if hasattr(pi, "rms"): pi.rms.update(ob) # update running mean/std for policy
-        # TODO: rms update for discriminator
-        # TODO: similar issue as above.
-        if isinstance(env.action_space, spaces.Box):
-            pass
-        elif isinstance(self.ac_space, spaces.Discrete):
-            raise NotImplementedError
-        else:
-            raise NotImplementedError
-        if hasattr(classifier, "ob_rms"): assert False; classifier.ob_rms.update(ob)
-        if hasattr(classifier, "ac_rms"): assert False; classifier.ac_rms.update(ac)
 
         args = seg["ob"], seg["ac"], atarg
         fvpargs = [arr[::5] for arr in args]
@@ -387,9 +394,31 @@ def learn(*,
                     g = allmean(compute_vflossandgrad(mbob, mbret))
                     vfadam.update(g, vf_stepsize)
 
+        with timed("sample expert trajectories"):
+            ob_a, ac_a, ep_lens_a = ob, ac, ep_lens
+            seg_e = seg_gen_e.__next__()
+            ob_e, ac_e, ep_lens_e = seg_e["ob"], seg_e["ac"], seg_e["ep_lens"]
+
+        if hasattr(D, "rms"):
+            obs = np.concatenate([ob_a, ob_e], axis=0)
+            if isinstance(ac_space, spaces.Box):
+                acs = np.concatenate([ac_a, ac_e], axis=0)
+                D.rms.update(np.concatenate([obs, acs], axis=1))
+            elif isinstance(ac_space, spaces.Discrete):
+                D.rms.update(obs)
+            else:
+                raise NotImplementedError
+
+        with timed("SVGD"):
+            sess = tf.get_default_session()
+            feed_dict = {D.Xs['a']: ob_a, D.As['a']: ac_a, D.Ls['a']: ep_lens_a,
+                         D.Xs['e']: ob_e, D.As['e']: ac_e, D.Ls['e']: ep_lens_e}
+            for _ in range(d_step):
+                sess.run(optimizer.update_op, feed_dict=feed_dict)
+
         logger.record_tabular("ev_tdlam_before", explained_variance(vpredbefore, tdlamret))
 
-        lrlocal = (seg["ep_lens"], seg["ep_rets"]) # local values
+        lrlocal = (seg["ep_lens"], seg["ep_true_rets"]) # local values
         listoflrpairs = MPI.COMM_WORLD.allgather(lrlocal) # list of tuples
         lens, rews = map(flatten_lists, zip(*listoflrpairs))
         lenbuffer.extend(lens)
