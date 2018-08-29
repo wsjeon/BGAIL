@@ -24,6 +24,7 @@ def build_env(args):
 
     return env
 
+
 def common_arg_parser():
     parser = arg_parser()
     parser.add_argument('--env', help='environment ID', type=str, default='Hopper-v1')
@@ -46,7 +47,7 @@ def get_alg_module(alg, submodule=None):
 
 def train(args, extra_args):
     env_type, env_id = run.get_env_type(args.env)
-    # TODO: either 'mujoco' or 'classical_control'
+    # TODO: either 'mujoco' or 'classic_control'
     if env_type not in ['mujoco']:
         raise NotImplementedError
 

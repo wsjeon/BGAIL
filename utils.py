@@ -23,9 +23,13 @@ def observation_placeholder(ob_space, batch_size=None, name='Ob'):
 
     assert isinstance(ob_space, Discrete) or isinstance(ob_space, Box), \
         'Can only deal with Discrete and Box observation spaces for now'
-    dtype = tf.int32 if isinstance(ob_space, Discrete) else tf.float32
-
-    return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=dtype, name=name)
+    if isinstance(ob_space, Box):
+        return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=tf.float32, name=name)
+    else:
+        try:
+            return tf.placeholder(shape=(batch_size,) + (ob_space.n,), dtype=tf.int32, name=name)
+        except AttributeError:
+            return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=tf.int32, name=name)
 
 
 def logsigmoid(a):

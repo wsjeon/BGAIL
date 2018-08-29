@@ -134,7 +134,7 @@ def build_classifier(env, classifier_network, num_particles, classifier_entcoeff
         if not isinstance(ob_space, spaces.Box):
             raise NotImplementedError
 
-        if isinstance(ac_space, spaces.Box):
+        if isinstance(ac_space, spaces.Box) or isinstance(ac_space, spaces.Discrete):
             classifier = TransitionClassifier(
                 env=env,
                 classifier_network=classifier_network,
@@ -142,8 +142,6 @@ def build_classifier(env, classifier_network, num_particles, classifier_entcoeff
                 classifier_entcoeff=classifier_entcoeff,
                 normalize_observations=normalize_observations
                 )
-        elif isinstance(ac_space, spaces.Discrete):
-            raise NotImplementedError
         else:
             raise NotImplementedError
 

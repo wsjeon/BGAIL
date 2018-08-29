@@ -45,10 +45,11 @@ class PolicyWithValue(object):
 
         self.pdtype = make_pdtype(env.action_space)
 
-        if not observation_dependent_var and isinstance(env.action_space, gym.spaces.Box):
-            self.pd, self.pi = self.pdtype.pdfromlatent(latent, init_scale=0.01)
-        else:
+        if observation_dependent_var and isinstance(env.action_space, gym.spaces.Box):
             self.pd, self.pi = self.pdtype.pdfromlatent(latent, init_scale=0.01, observation_dependent_var=observation_dependent_var)
+        else:
+            self.pd, self.pi = self.pdtype.pdfromlatent(latent, init_scale=0.01)
+
 
         self.action = self.pd.sample()
         self.neglogp = self.pd.neglogp(self.action)
