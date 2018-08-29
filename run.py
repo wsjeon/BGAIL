@@ -27,7 +27,7 @@ def build_env(args):
 
 def common_arg_parser():
     parser = arg_parser()
-    parser.add_argument('--env', help='environment ID', type=str, default='Hopper-v1')
+    parser.add_argument('--env', help='environment ID', type=str, default='Walker2d-v1')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--alg', help='Algorithm', type=str, default='bgail')
     parser.add_argument('--num_env', help='Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco', default=None, type=int)
