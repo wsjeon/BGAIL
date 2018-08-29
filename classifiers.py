@@ -123,12 +123,11 @@ class TransitionClassifier(object):
     def get_reward(self, observations, actions):
         sess = tf.get_default_session()
         if len(observations.shape) == 1:
-            observations = np.expand_dims(observations, 0).reshape(-1, 1)
+            observations = np.expand_dims(observations, 0)
         if len(actions.shape) == 1:
-            actions = np.expand_dims(actions, 0).reshape(-1, 1)
-        feed_dict = {self.Xs['a']: observations, self.As['a']: actions}
+            actions = np.expand_dims(actions, 0)
 
-        return sess.run(self.reward_op, feed_dict)
+        return sess.run(self.reward_op, feed_dict={self.Xs['a']: observations, self.As['a']: actions})
 
 
 def build_classifier(env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):

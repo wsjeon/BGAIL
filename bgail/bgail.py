@@ -317,9 +317,6 @@ def learn(*,
         atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
 
         if hasattr(pi, "ret_rms"): pi.ret_rms.update(tdlamret)
-        # TODO: I think there's no input rms... because there's no ob_rms, but rms! Thus, following line should be checked.
-        # TODO: That is, if input normalization is done, we should stack in `assert False`
-        # TODO: My conjecture is that both "ob_rms" should be changed into "rms" in our case.
         if hasattr(pi, "rms"): pi.rms.update(ob) # update running mean/std for policy
         # TODO: rms update for discriminator
         # TODO: similar issue as above.
