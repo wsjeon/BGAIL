@@ -103,10 +103,13 @@ class TransitionClassifier(object):
                     _, output_ta = tf.while_loop(cond=cond, body=body, loop_vars=[time, output_ta], parallel_iterations=100)
 
                     objectives[c] = tf.reduce_logsumexp(output_ta.stack())
+
             classifier_entropy = tf.reduce_mean(logit_bernoulli_entropy(tf.concat([logits['a'], logits['e']], axis=0)))
             sum_objective = objectives['a'] + objectives['e'] + self.classifier_entcoeff * classifier_entropy
+
             variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='classifier{}'.format(i))
             variables_list.append(variables)
+
             gradients = tf.gradients(sum_objective, variables)
             gradients_list.append(gradients)
 

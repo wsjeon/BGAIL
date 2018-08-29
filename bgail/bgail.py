@@ -22,6 +22,7 @@ import os
 import pickle
 import random
 
+
 def traj_segment_generator(pi, env, horizon, stochastic):
     # Initialize state variables
     t = 0
@@ -81,6 +82,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ob = env.reset()
         t += 1
 
+
 def expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, num_expert_trajs):
     env_id = env.venv.envs[0].env.env.spec.id
     env_name = env_id.split('-')[0]
@@ -109,6 +111,7 @@ def expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, n
         if i == num_expert_trajs:
             random.shuffle(expert_trajs)
             i = 0
+
 
 def add_vtarg_and_adv(seg, gamma, lam):
     new = np.append(seg["new"], 0) # last element is only used for last vtarg, but we already zeroed it if last new = 1
@@ -340,9 +343,9 @@ def learn(*,
             seg = seg_gen.__next__()
 
         # TODO: check whether TRPO works well or not.
-        seg["rew"] = seg["true_rew"]
+        # seg["rew"] = seg["true_rew"]
         # # TODO: check whether BGAIL works well or not.
-        # seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
+        seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
 
         add_vtarg_and_adv(seg, gamma, lam)
 
@@ -355,6 +358,7 @@ def learn(*,
 
         args = seg["ob"], seg["ac"], atarg
         fvpargs = [arr[::5] for arr in args]
+
         def fisher_vector_product(p):
             return allmean(compute_fvp(p, *fvpargs)) + cg_damping * p
 
@@ -407,7 +411,7 @@ def learn(*,
 
             for _ in range(vf_iters):
                 for (mbob, mbret) in dataset.iterbatches((seg["ob"], seg["tdlamret"]),
-                include_final_partial_batch=False, batch_size=64):
+                                                         include_final_partial_batch=False, batch_size=1000):
                     g = allmean(compute_vflossandgrad(mbob, mbret))
                     vfadam.update(g, vf_stepsize)
 
@@ -432,6 +436,8 @@ def learn(*,
                          D.Xs['e']: ob_e, D.As['e']: ac_e, D.Ls['e']: ep_lens_e}
             for _ in range(d_step):
                 sess.run(optimizer.update_op, feed_dict=feed_dict)
+            print(ep_lens_a)
+            print(np.array(seg["ep_true_rets"]).reshape(-1).tolist())
 
         logger.record_tabular("ev_tdlam_before", explained_variance(vpredbefore, tdlamret))
 
@@ -452,22 +458,27 @@ def learn(*,
         logger.record_tabular("TimestepsSoFar", timesteps_so_far)
         logger.record_tabular("TimeElapsed", time.time() - tstart)
 
-        if rank==0:
+        if rank == 0:
             logger.dump_tabular()
 
     return pi
 
+
 def flatten_lists(listoflists):
     return [el for list_ in listoflists for el in list_]
+
 
 def get_variables(scope):
     return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope)
 
+
 def get_trainable_variables(scope):
     return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
 
+
 def get_vf_trainable_variables(scope):
     return [v for v in get_trainable_variables(scope) if 'vf' in v.name[len(scope):].split('/')]    
+
 
 def get_pi_trainable_variables(scope):
     return [v for v in get_trainable_variables(scope) if 'pi' in v.name[len(scope):].split('/')]    
