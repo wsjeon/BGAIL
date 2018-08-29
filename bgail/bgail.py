@@ -307,7 +307,7 @@ def learn(*,
         with timed("sampling"):
             seg = seg_gen.__next__()
 
-        # TODO: we should add "rew" generator here!
+        seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
 
         add_vtarg_and_adv(seg, gamma, lam)
 
@@ -320,9 +320,15 @@ def learn(*,
         # TODO: I think there's no input rms... because there's no ob_rms, but rms! Thus, following line should be checked.
         # TODO: That is, if input normalization is done, we should stack in `assert False`
         # TODO: My conjecture is that both "ob_rms" should be changed into "rms" in our case.
-        if hasattr(pi, "ob_rms"): assert False; pi.ob_rms.update(ob) # update running mean/std for policy
+        if hasattr(pi, "rms"): pi.rms.update(ob) # update running mean/std for policy
         # TODO: rms update for discriminator
         # TODO: similar issue as above.
+        if isinstance(env.action_space, spaces.Box):
+            pass
+        elif isinstance(self.ac_space, spaces.Discrete):
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
         if hasattr(classifier, "ob_rms"): assert False; classifier.ob_rms.update(ob)
         if hasattr(classifier, "ac_rms"): assert False; classifier.ac_rms.update(ac)
 
