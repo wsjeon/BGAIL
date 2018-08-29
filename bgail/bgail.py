@@ -34,7 +34,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     max_horizon = horizon + 1000  # since maximum episode length is 1000 in MuJoCo env
 
     # Initialize history arrays
-    obs = np.array([ob for _ in range(max_horizon)])
+    obs = np.array([ob.reshape(-1) for _ in range(max_horizon)])
     true_rews = np.zeros(max_horizon, 'float32')
     vpreds = np.zeros(max_horizon, 'float32')
     news = np.zeros(max_horizon, 'int32')
