@@ -1,4 +1,3 @@
-dependencies/mujoco-py/
-dependencies/gym/
-dependencies/baselines/
+dependencies/
+outputs/
 expert_trajs/
