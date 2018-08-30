@@ -440,8 +440,6 @@ def learn(*,
                          D.Xs['e']: ob_e, D.As['e']: ac_e, D.Ls['e']: ep_lens_e}
             for _ in range(d_step):
                 sess.run(optimizer.update_op, feed_dict=feed_dict)
-            print(ep_lens_a)
-            print(np.array(seg["ep_true_rets"]).reshape(-1).tolist())
 
         logger.record_tabular("ev_tdlam_before", explained_variance(vpredbefore, tdlamret))
 
