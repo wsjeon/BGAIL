@@ -34,7 +34,7 @@ def mujoco():
     return dict(
         policy_network=mlp(num_hidden=100, num_layers=2),
         classifier_network=mlp(num_hidden=100, num_layers=2),
-        max_iters=2001,
+        max_iters=4001,
         timesteps_per_batch=1000,
         max_kl=0.01,
         cg_iters=10,
@@ -92,7 +92,7 @@ def mujoco_gail():
     return dict(
         policy_network=mlp(num_hidden=100, num_layers=2),
         classifier_network=mlp(num_hidden=100, num_layers=2),
-        max_iters=2001,
+        max_iters=4001,
         timesteps_per_batch=1000,
         max_kl=0.01,
         cg_iters=10,
