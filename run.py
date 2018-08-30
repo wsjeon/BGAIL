@@ -16,7 +16,7 @@ def build_env(args):
 
 def common_arg_parser():
     parser = arg_parser()
-    parser.add_argument('--env', help='environment ID', type=str, default='Hopper-v1')
+    parser.add_argument('--env', help='environment ID', type=str, default='Reacher-v1')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--alg', help='Algorithm', type=str, default='bgail')
     parser.add_argument('--reward_scale', help='Reward scale factor. Default: 1.0', default=1.0, type=float)

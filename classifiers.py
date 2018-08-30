@@ -65,10 +65,9 @@ class TransitionClassifier(object):
             logits = fc(classifier_latent, 'out', nh=num_output_units, init_scale=np.sqrt(2))
             if isinstance(self.ac_space, spaces.Discrete):
                 column0 = tf.reshape(tf.range(tf.shape(action_placeholder)[0]), [-1, 1])
-                column1 = tf.to_int32(action_placeholder)
+                column1 = tf.reshape(action_placeholder, [-1, 1])
                 indices = tf.concat([column0, column1], axis=1)
-                logits = tf.gather_nd(logits, indices)
-
+                logits = tf.reshape(tf.gather_nd(logits, indices), [-1, 1])
             return logits
 
         gradients_list, variables_list, neg_cross_ents_list = [], [], []
@@ -128,7 +127,7 @@ class TransitionClassifier(object):
         sess = tf.get_default_session()
         if len(observations.shape) == 1:
             observations = np.expand_dims(observations, 0)
-        if len(actions.shape) == 1:
+        if len(actions.shape) == 1 and not isinstance(self.ac_space, spaces.Discrete):
             actions = np.expand_dims(actions, 0)
 
         return sess.run(self.reward_op, feed_dict={self.Xs['a']: observations, self.As['a']: actions})

@@ -51,6 +51,8 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     while True:
         prevac = ac
         ac, vpred, _, _ = pi.step(ob, stochastic=stochastic)
+        if isinstance(env.action_space, spaces.Discrete):
+            ac = ac[0]
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
@@ -89,7 +91,7 @@ def expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, n
     env_id = env.env.spec.id
     env_name = env_id.split('-')[0]
     if env_name not in ['Hopper', 'Walker2d', 'HalfCheetah', 'Ant', 'Humanoid',
-                        'CartPole', 'MountainCar', 'Acrobot']:
+                        'CartPole', 'MountainCar', 'Reacher']:
         raise NotImplementedError
 
     path = os.path.join(expert_trajs_path, 'trajs_'+env_name.lower()+'.pkl')
@@ -100,6 +102,8 @@ def expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, n
     i = 0
     while True:
         ob, ac, ep_true_ret = expert_trajs[i]["ob"], expert_trajs[i]["ac"], expert_trajs[i]["ep_ret"]
+        if isinstance(env.action_space, spaces.Discrete):
+            ac = ac.reshape(-1)
         obs.append(ob)
         acs.append(ac)
         ep_lens.append(ob.shape[0])

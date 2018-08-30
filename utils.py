@@ -28,7 +28,7 @@ def observation_placeholder(ob_space, batch_size=None, name='Ob'):
         return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=tf.float32, name=name)
     else:
         try:
-            return tf.placeholder(shape=(batch_size,) + (ob_space.n,), dtype=tf.int32, name=name)
+            return tf.placeholder(shape=(batch_size,), dtype=tf.int32, name=name)
         except AttributeError:
             return tf.placeholder(shape=(batch_size,) + ob_space.shape, dtype=tf.int32, name=name)
 
