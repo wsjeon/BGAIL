@@ -7,7 +7,8 @@ from baselines.a2c.utils import fc
 
 
 class TransitionClassifier(object):
-    def __init__(self, env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):
+    def __init__(self, env, classifier_network, num_particles, classifier_entcoeff,
+                 use_classifier_logsumexp, use_reward_logsumexp, normalize_observations=True):
         self.env = env
         self.env_id = env.env.spec.id
         self.ob_space, self.ac_space = env.observation_space, env.action_space
@@ -16,7 +17,8 @@ class TransitionClassifier(object):
         self.Xs, self.As, self.Ls, inputs = self.make_placeholders_and_inputs()
         if normalize_observations:
             inputs, self.rms = self.normalize_inputs(inputs)
-        self.grads_list, self.vars_list, self.reward_op = self.make_objectives_and_gradients(inputs, classifier_network)
+        self.grads_list, self.vars_list, self.reward_op = \
+            self.make_objectives_and_gradients(inputs, classifier_network, use_classifier_logsumexp, use_reward_logsumexp)
 
     def make_placeholders_and_inputs(self):
         Xs, As, Ls, inputs = {}, {}, {}, {}
@@ -47,7 +49,7 @@ class TransitionClassifier(object):
 
         return normalized_inputs, rms
 
-    def make_objectives_and_gradients(self, inputs, classifier_network):
+    def make_objectives_and_gradients(self, inputs, classifier_network, use_classifier_logsumexp, use_reward_logsumexp):
         if isinstance(self.ac_space, spaces.Box):
             num_output_units = 1
         elif isinstance(self.ac_space, spaces.Discrete):
@@ -93,7 +95,10 @@ class TransitionClassifier(object):
 
                     _, output_ta = tf.while_loop(cond=cond, body=body, loop_vars=[time, output_ta], parallel_iterations=100)
 
-                    objectives[c] = tf.reduce_logsumexp(output_ta.stack())
+                    if use_classifier_logsumexp:
+                        objectives[c] = tf.reduce_logsumexp(output_ta.stack())
+                    else:
+                        objectives[c] = tf.reduce_sum(output_ta.stack())
 
             classifier_entropy = tf.reduce_mean(logit_bernoulli_entropy(tf.concat([logits['a'], logits['e']], axis=0)))
             sum_objective = objectives['a'] + objectives['e'] + self.classifier_entcoeff * classifier_entropy
@@ -109,7 +114,12 @@ class TransitionClassifier(object):
             else:
                 reward_ops.append(-tf.log(1.-tf.nn.sigmoid(logits['a'])+1e-8))
 
-        return gradients_list, variables_list, tf.reduce_mean(tf.concat(reward_ops, axis=1), axis=1)
+            if use_reward_logsumexp:
+                reward_op = tf.reduce_logsumexp(tf.concat(reward_ops, axis=1), axis=1) - tf.log(float(self.num_particles))
+            else:
+                reward_op = tf.reduce_mean(tf.concat(reward_ops, axis=1), axis=1)
+
+        return gradients_list, variables_list, reward_op
 
     def get_grads_and_vars(self):
         return self.grads_list, self.vars_list
@@ -124,7 +134,8 @@ class TransitionClassifier(object):
         return sess.run(self.reward_op, feed_dict={self.Xs['a']: observations, self.As['a']: actions})
 
 
-def build_classifier(env, classifier_network, num_particles, classifier_entcoeff, normalize_observations=True):
+def build_classifier(env, classifier_network, num_particles, classifier_entcoeff,
+                     use_classifier_logsumexp, use_reward_logsumexp, normalize_observations=True):
     if isinstance(classifier_network, str):
         raise NotImplementedError
 
@@ -140,6 +151,8 @@ def build_classifier(env, classifier_network, num_particles, classifier_entcoeff
                 classifier_network=classifier_network,
                 num_particles=num_particles,
                 classifier_entcoeff=classifier_entcoeff,
+                use_classifier_logsumexp=use_classifier_logsumexp,
+                use_reward_logsumexp=use_reward_logsumexp,
                 normalize_observations=normalize_observations
                 )
         else:

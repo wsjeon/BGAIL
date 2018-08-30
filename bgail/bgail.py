@@ -16,7 +16,7 @@ from policies import build_policy
 from classifiers import build_classifier
 from contextlib import contextmanager
 import sys; sys.path.insert(0, '..')
-from optimizers import SVGD
+from optimizers import SVGD, Ensemble
 from utils import save_state, FileWriter
 from statistics import Statistics
 from gym import spaces
@@ -155,6 +155,9 @@ def learn(*,
           callback=None,
           load_path=None,
           save_path=None,
+          use_classifier_logsumexp=True,
+          use_reward_logsumexp=False,
+          use_svgd=True,
           **policy_network_kwargs
           ):
     '''
@@ -276,10 +279,14 @@ def learn(*,
     compute_fvp = U.function([flat_tangent, ob, ac, atarg], fvp)
     compute_vflossandgrad = U.function([ob, ret], U.flatgrad(vferr, vf_var_list))
 
-    D = build_classifier(env, classifier_network, num_particles, classifier_entcoeff)
+    D = build_classifier(env, classifier_network, num_particles,
+                         classifier_entcoeff, use_classifier_logsumexp, use_reward_logsumexp)
     grads_list, vars_list = D.get_grads_and_vars()
 
-    optimizer = SVGD(grads_list, vars_list, lambda: tf.train.AdamOptimizer(learning_rate=d_stepsize))
+    if use_svgd:
+        optimizer = SVGD(grads_list, vars_list, lambda: tf.train.AdamOptimizer(learning_rate=d_stepsize))
+    else:
+        optimizer = Ensemble(grads_list, vars_list, lambda: tf.train.AdamOptimizer(learning_rate=d_stepsize))
 
     @contextmanager
     def timed(msg):

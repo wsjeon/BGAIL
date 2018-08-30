@@ -58,10 +58,10 @@ def train(args, extra_args):
     if env_type not in ['mujoco']:
         raise NotImplementedError
 
-    seed = args.seed
-
-    # TODO: either 'bgail' or 'gail'.
-    if args.alg not in ['bgail']:
+    if args.alg is 'gail':
+        env_type += '_gail'
+        args.alg = 'bgail'
+    elif args.alg not in ['bgail', 'gail']:
         raise NotImplementedError
 
     learn = run.get_learn_function(args.alg)
