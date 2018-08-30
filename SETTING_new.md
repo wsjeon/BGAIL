@@ -41,10 +41,10 @@ We set our environment as follows:
 4. Install Gym.
     ```bash
     cd ../gym/
-    pip install -e .[classical_control,robotics]
+    pip install -e .[classic_control,mujoco]
     ```
 
-5. Install TensorFlow with GPU support.
+5. Install TensorFlow 1.10.0 with GPU support.
     ```bash
     pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.10.0-cp36-cp36m-linux_x86_64.whl
     ```
