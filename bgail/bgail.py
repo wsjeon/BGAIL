@@ -291,10 +291,10 @@ def learn(*,
     @contextmanager
     def timed(msg):
         if rank == 0:
-            print(colorize(msg, color='magenta'))
+            print(colorize(msg, color='yellow'))
             tstart = time.time()
             yield
-            print(colorize("done in %.3f seconds"%(time.time() - tstart), color='magenta'))
+            print(colorize("done in %.3f seconds"%(time.time() - tstart), color='blue'))
         else:
             yield
 
