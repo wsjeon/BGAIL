@@ -17,6 +17,8 @@ from classifiers import build_classifier
 from contextlib import contextmanager
 import sys; sys.path.insert(0, '..')
 from optimizers import SVGD
+from utils import save_state, FileWriter
+from statistics import Statistics
 from gym import spaces
 import os
 import pickle
@@ -152,6 +154,7 @@ def learn(*,
           max_episodes=0, total_timesteps=0,  # time constraint
           callback=None,
           load_path=None,
+          save_path=None,
           **policy_network_kwargs
           ):
     '''
@@ -187,7 +190,7 @@ def learn(*,
     max_iters               maximum number of policy optimization iterations
 
     callback                function to be called with (locals(), globals()) each policy optimization step
-    
+
     load_path               str, path to load the model from (default: None, i.e. no model is loaded)
 
     **network_kwargs        keyword arguments to the policy / network builder. See baselines.common/policies.py/build_policy and arguments to a particular type of network
@@ -204,12 +207,7 @@ def learn(*,
         raise NotImplementedError
     rank = MPI.COMM_WORLD.Get_rank()
 
-    cpus_per_worker = 1
-    U.get_session(config=tf.ConfigProto(
-            allow_soft_placement=True, 
-            inter_op_parallelism_threads=cpus_per_worker,
-            intra_op_parallelism_threads=cpus_per_worker
-    ))
+    U.get_session(config=tf.ConfigProto(allow_soft_placement=True))
 
     policy = build_policy(env, policy_network, value_network='copy', **policy_network_kwargs)
     set_global_seeds(seed)
@@ -303,7 +301,12 @@ def learn(*,
     U.initialize()
     if load_path is not None:
         pi.load(load_path)
-    
+
+    if rank == 0:
+        saver = tf.train.Saver(max_to_keep=10000)
+        writer = FileWriter(os.path.join(save_path, 'logs'))
+        stats = Statistics(scalar_keys=["average_return", "average_episode_length"])
+
     th_init = get_flat()
     MPI.COMM_WORLD.Bcast(th_init, root=0)
     set_from_flat(th_init)
@@ -339,12 +342,13 @@ def learn(*,
             break
         logger.log("********** Iteration %i ************"%iters_so_far)
 
+        if iters_so_far % 500 == 0 and save_path is not None:
+            fname = os.path.join(save_path, 'checkpoints', 'checkpoint')
+            save_state(fname, saver, iters_so_far)
+
         with timed("sampling"):
             seg = seg_gen.__next__()
 
-        # TODO: check whether TRPO works well or not.
-        # seg["rew"] = seg["true_rew"]
-        # # TODO: check whether BGAIL works well or not.
         seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
 
         add_vtarg_and_adv(seg, gamma, lam)
@@ -460,6 +464,9 @@ def learn(*,
 
         if rank == 0:
             logger.dump_tabular()
+            stats.add_all_summary(writer, [np.mean(rewbuffer), np.mean(lenbuffer)], iters_so_far)
+            rewbuffer.clear()
+            lenbuffer.clear()
 
     return pi
 

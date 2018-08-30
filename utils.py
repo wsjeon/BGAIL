@@ -1,5 +1,6 @@
 import tensorflow as tf
 from gym.spaces import Discrete, Box
+import os
 
 
 def observation_placeholder(ob_space, batch_size=None, name='Ob'):
@@ -39,3 +40,17 @@ def logsigmoid(a):
 def logit_bernoulli_entropy(logits):
     ent = (1. - tf.nn.sigmoid(logits)) * logits - logsigmoid(logits)
     return ent
+
+
+def load_state(fname, saver):
+    saver.restore(tf.get_default_session(), fname)
+
+
+def save_state(fname, saver, global_step=None):
+    os.makedirs(os.path.dirname(fname), exist_ok=True)
+    saver.save(tf.get_default_session(), fname, global_step=global_step)
+
+
+def FileWriter(save_path):
+    os.makedirs(save_path, exist_ok=True)
+    return tf.summary.FileWriter(save_path)

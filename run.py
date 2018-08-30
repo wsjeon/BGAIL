@@ -40,7 +40,7 @@ def common_arg_parser():
     parser.add_argument('--alg', help='Algorithm', type=str, default='bgail')
     parser.add_argument('--num_env', help='Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco', default=None, type=int)
     parser.add_argument('--reward_scale', help='Reward scale factor. Default: 1.0', default=1.0, type=float)
-    parser.add_argument('--save_path', help='Path to save trained model to', default=None, type=str)
+    parser.add_argument('--save_path', help='Path to save trained model to', default='./outputs', type=str)
 
     return parser
 
@@ -72,13 +72,7 @@ def train(args, extra_args):
 
     print('Training {} on {}:{} with arguments \n{}'.format(args.alg, env_type, env_id, alg_kwargs))
 
-    model = learn(
-        env=env,  
-        seed=seed,
-        **alg_kwargs
-    )
-
-    return model, env
+    model = learn(env=env, seed=args.seed, save_path=args.save_path, **alg_kwargs)
 
 
 def main():
