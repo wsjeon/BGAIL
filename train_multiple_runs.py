@@ -25,13 +25,13 @@ def main():
     argparser = arg_parser_of_interest()
     args, _ = argparser.parse_known_args()
 
-    alg = ['bgail', 'gail']
-    env = ['Hopper-v1', 'Walker2d-v1', 'HalfCheetah-v1', 'Ant-v1', 'Humanoid-v1']
-    num_expert_trajs = [25]
-    d_step = [5, 10]
-    num_particles = [1, 5, 10, 15, 20]
-    timesteps_per_batch = [1000, 3000, 5000, 10000]
-    seed = list(range(15))
+    alg = ['bgail', 'gail']  # 2
+    env = ['Hopper-v1', 'Walker2d-v1', 'HalfCheetah-v1', 'Ant-v1', 'Humanoid-v1']  # 5
+    num_expert_trajs = [25]  # 1
+    d_step = [5, 10]  # 2
+    num_particles = [1, 5, 10]  # 3
+    timesteps_per_batch = [1000]  # 1
+    seed = list(range(15))  # 15  --->   900 Processes in total
 
     hyperparameters_list = list(itertools.product(alg, env, num_expert_trajs, d_step, num_particles,
                                                   timesteps_per_batch, seed))
@@ -39,10 +39,18 @@ def main():
     args.alg, args.env, args.num_expert_trajs, args.d_step, args.num_particles, args.timesteps_per_batch, args.seed \
         = hyperparameters
 
+    if args.env == 'Humanoid-v1':
+        args.num_expert_trajs = 240
+        args.timesteps_per_batch = 5000
+        hyperparameters[2] = args.num_expert_trajs
+        hyperparameters[5] = args.timesteps_per_batch
+    elif args.env == 'Ant-v1':
+        args.timesteps_per_batch = 5000
+        hyperparameters[5] = args.timesteps_per_batch
+
     additional_path = os.path.join(*[str(h) for h in hyperparameters])
     args.save_path = os.path.join(args.save_path, additional_path)
 
-    print(args.__dict__['alg'])
     interpreter = '/home/wsjeon/anaconda3/envs/bgail/bin/python '
     command = interpreter + 'run.py'
     for key in ['alg', 'env', 'num_expert_trajs', 'd_step', 'num_particles', 'timesteps_per_batch', 'seed', 'save_path']:
