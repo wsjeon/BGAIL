@@ -48,7 +48,7 @@ def load_state(fname, saver):
 
 def save_state(fname, saver, global_step=None):
     os.makedirs(os.path.dirname(fname), exist_ok=True)
-    saver.save(tf.get_default_session(), fname, global_step=global_step)
+    saver.save(tf.get_default_session(), fname, global_step=global_step, write_meta_graph=False)
 
 
 def FileWriter(save_path):
