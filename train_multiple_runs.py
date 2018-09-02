@@ -35,9 +35,15 @@ def main():
 
     hyperparameters_list = list(itertools.product(alg, env, num_expert_trajs, d_step, num_particles,
                                                   timesteps_per_batch, seed))
-    hyperparameters = hyperparameters_list[args.process_id]
+    hyperparameters = list(hyperparameters_list[args.process_id])
     args.alg, args.env, args.num_expert_trajs, args.d_step, args.num_particles, args.timesteps_per_batch, args.seed \
         = hyperparameters
+
+    # Filtering
+    if args.env in ['Ant-v1', 'Humanoid-v1']:
+        assert False
+    if args.alg == 'bgail':
+        assert False 
 
     if args.env == 'Humanoid-v1':
         args.num_expert_trajs = 240
