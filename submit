@@ -1,0 +1,17 @@
+universe=Vanilla
+executable=./train.sh
+arguments=$(Process) $(TMPPWD)
+getenv=True
+
+requirements=(Machine=="c19"||Machine=="c20"||Machine=="c21"||Machine=="c22"||Machine=="c23"||Machine=="c24"||Machine=="c25"||Machine=="c26")
+
+should_transfer_files=YES
+when_to_transfer_output=ON_EXIT_OR_EVICT
+
+#output=/home/wsjeon/condor/output/output.$(Process).out
+#log=/home/wsjeon/condor/log/log.$(Process).out
+error=/home/wsjeon/condor/error/error.$(Process).out
+
+RequestMemory = 30000
+RequestCpus = 4
+queue 900
