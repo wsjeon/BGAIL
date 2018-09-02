@@ -35,7 +35,7 @@ def get_alg_module(alg, submodule=None):
 def train(args, extra_args):
     env_type, env_id = run.get_env_type(args.env)
 
-    if args.alg is 'gail':
+    if args.alg == 'gail':
         env_type += '_gail'
         args.alg = 'bgail'
     elif args.alg not in ['bgail', 'gail']:
