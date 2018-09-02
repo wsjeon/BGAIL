@@ -67,7 +67,7 @@ We set our environment as follows:
         ```
         To solve this problem, we use the comment [here](https://github.com/openai/mujoco-py/issues/44#issuecomment-399679237).
 
-8. Install `h5py`.
+8. Install `h5py` and `matplotlib`.
     ```bash
-    conda install h5py
+    conda install h5py matplotlib
     ```        
