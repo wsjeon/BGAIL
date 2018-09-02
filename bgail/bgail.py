@@ -314,7 +314,7 @@ def learn(*,
         pi.load(load_path)
 
     if rank == 0:
-        saver = tf.train.Saver(max_to_keep=10000)
+        saver = tf.train.Saver(var_list=get_variables("pi"), max_to_keep=10000)
         writer = FileWriter(os.path.join(save_path, 'logs'))
         stats = Statistics(scalar_keys=["average_return", "average_episode_length"])
 
