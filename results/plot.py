@@ -64,7 +64,7 @@ def plot(load_path):
         color = colors[hyperparameter_id]
         window_size = 100
         window = np.ones(100) / window_size
-        ma = np.convolve(m, window, mode='same')
+        ma = np.convolve(m, window, mode='same')[:m.shape[0]]
 
         plt.plot(np.arange(len(m)), ma, color=color, label=path, linewidth=0.8, zorder=2)
         plt.fill_between(np.arange(len(m)), m-c, m+c, facecolor=color, alpha=0.2, edgecolor=None, zorder=1)
