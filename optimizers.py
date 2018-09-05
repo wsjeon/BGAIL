@@ -66,7 +66,9 @@ class SVGD(object):
             for var in vars:
                 shape = self.var_shape(var)
                 size = int(np.prod(shape))
-                grads.append(tf.reshape(flatgrads[start:start + size], shape))
+                end = start + size
+                grads.append(tf.reshape(flatgrads[start:end], shape))
+                start = end
             grads_list.append(grads)
 
         # optimizer
@@ -84,7 +86,7 @@ class SVGD(object):
         :param vars: list of variables
         :return: two lists of flattened gradients and varaibles
         """
-        flatgrads =  tf.concat(axis=0, values=[
+        flatgrads = tf.concat(axis=0, values=[
             tf.reshape(grad if grad is not None else tf.zeros_like(var), [self.num_elements(var)])
             for (var, grad) in zip(vars, grads)])
         flatvars = tf.concat(axis=0, values=[
