@@ -14,4 +14,4 @@ error=/home/wsjeon/condor/error/error.$(Process).out
 
 RequestMemory = 30000
 RequestCpus = 4
-queue 900
+queue 300
