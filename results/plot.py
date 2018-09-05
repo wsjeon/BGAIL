@@ -14,9 +14,11 @@ def plot(load_path):
     d_step = [5, 10]  # 2
     num_particles = [1, 5, 10]  # 3
     timesteps_per_batch = [1000]  # 1
-    seed = list(range(15))  # 15  --->   900 Processes in total
+    seed = list(range(5))  # 5  --->   900 Processes in total
 
-    hyperparameters_list = list(itertools.product(alg, env, num_expert_trajs, d_step, num_particles,
+    hyperparameters_list = list(itertools.product(alg, env,
+                                                  use_classifier_logsumexp,
+                                                  num_expert_trajs, d_step, num_particles,
                                                   timesteps_per_batch))
 
     num_colors = int(len(hyperparameters_list) / len(env) / len(alg))
@@ -62,8 +64,8 @@ def plot(load_path):
         plt.figure(fig_id)
         hyperparameter_id = hyperparameters_list.index(hyperparameters)
         color = colors[hyperparameter_id]
-        window_size = 100
-        window = np.ones(100) / window_size
+        window_size = 10
+        window = np.ones(window_size) / window_size
         ma = np.convolve(m, window, mode='same')[:m.shape[0]]
 
         plt.plot(np.arange(len(m)), ma, color=color, label=path, linewidth=0.8, zorder=2)
