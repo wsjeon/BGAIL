@@ -25,7 +25,7 @@ import pickle
 import random
 
 
-def traj_segment_generator(pi, env, horizon, stochastic):
+def traj_segment_generator(pi, env, horizon, stochastic, render=False):
     # Initialize state variables
     t = 0
     ac = env.action_space.sample()
@@ -49,6 +49,8 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     prevacs = acs.copy()
 
     while True:
+        if render:
+            env.render()
         prevac = ac
         ac, vpred, _, _ = pi.step(ob, stochastic=stochastic)
         if isinstance(env.action_space, spaces.Discrete):
@@ -159,6 +161,7 @@ def learn(*,
           callback=None,
           load_path=None,
           save_path=None,
+          render=False,
           use_classifier_logsumexp=True,
           use_reward_logsumexp=False,
           use_svgd=True,
@@ -214,7 +217,8 @@ def learn(*,
         raise NotImplementedError
     rank = MPI.COMM_WORLD.Get_rank()
 
-    U.get_session(config=tf.ConfigProto(allow_soft_placement=True))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.49)
+    U.get_session(config=tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options))
 
     policy = build_policy(env, policy_network, value_network='copy', **policy_network_kwargs)
     set_global_seeds(seed)
@@ -310,13 +314,15 @@ def learn(*,
         return out
 
     U.initialize()
-    if load_path is not None:
-        pi.load(load_path)
 
     if rank == 0:
-        saver = tf.train.Saver(max_to_keep=10000)
+        saver = tf.train.Saver(var_list=get_variables("pi"), max_to_keep=10000)
         writer = FileWriter(os.path.join(save_path, 'logs'))
         stats = Statistics(scalar_keys=["average_return", "average_episode_length"])
+
+    if load_path is not None:
+        # pi.load(load_path)
+        saver.restore(U.get_session(), load_path)
 
     th_init = get_flat()
     MPI.COMM_WORLD.Bcast(th_init, root=0)
@@ -326,7 +332,10 @@ def learn(*,
 
     # Prepare for rollouts
     # ----------------------------------------
-    seg_gen = traj_segment_generator(pi, env, timesteps_per_batch, stochastic=True)
+    if load_path is not None:
+        seg_gen = traj_segment_generator(pi, env, 1, stochastic=False, render=render)
+    else:
+        seg_gen = traj_segment_generator(pi, env, timesteps_per_batch, stochastic=True, render=render)
     seg_gen_e = expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, num_expert_trajs)
 
     episodes_so_far = 0
@@ -353,12 +362,19 @@ def learn(*,
             break
         logger.log("********** Iteration %i ************"%iters_so_far)
 
-        if iters_so_far % 500 == 0 and save_path is not None:
+        if iters_so_far % 500 == 0 and save_path is not None and load_path is None:
             fname = os.path.join(save_path, 'checkpoints', 'checkpoint')
             save_state(fname, saver, iters_so_far)
 
         with timed("sampling"):
             seg = seg_gen.__next__()
+
+        if load_path is not None:
+            iters_so_far += 1
+            logger.record_tabular("EpRew", int(np.mean(seg["ep_true_rets"])))
+            logger.record_tabular("EpLen", int(np.mean(seg["ep_lens"])))
+            logger.dump_tabular()
+            continue
 
         seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
 

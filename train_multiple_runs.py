@@ -18,6 +18,8 @@ def arg_parser_of_interest():
 
     parser.add_argument('--save_path', help='Path to save trained model to', default='./outputs', type=str)
 
+    parser.add_argument('--use_classifier_logsumexp', help='Use classifier logsumexp or not', default=True)
+
     return parser
 
 
@@ -25,27 +27,47 @@ def main():
     argparser = arg_parser_of_interest()
     args, _ = argparser.parse_known_args()
 
-    alg = ['bgail', 'gail']
-    env = ['Hopper-v1', 'Walker2d-v1', 'HalfCheetah-v1', 'Ant-v1', 'Humanoid-v1']
-    num_expert_trajs = [25]
-    d_step = [5, 10]
-    num_particles = [1, 5, 10, 15, 20]
-    timesteps_per_batch = [1000, 3000, 5000, 10000]
-    seed = list(range(15))
+    alg = ['bgail', 'gail']  # 2
+    env = ['Walker2d-v1', 'HalfCheetah-v1', 'Hopper-v1', 'Ant-v1', 'Humanoid-v1']  # 5
+    use_classifier_logsumexp = [True, False] # 2
+    num_expert_trajs = [25]  # 1
+    d_step = [5]  # 1
+    num_particles = [1, 5, 9]  # 3
+    timesteps_per_batch = [1000]  # 1
+    seed = list(range(5))  # 5  --->   300 Processes in total
 
-    hyperparameters_list = list(itertools.product(alg, env, num_expert_trajs, d_step, num_particles,
+    max_iters = 4001
+
+    hyperparameters_list = list(itertools.product(alg, env,
+                                                  use_classifier_logsumexp,
+                                                  num_expert_trajs, d_step, num_particles,
                                                   timesteps_per_batch, seed))
-    hyperparameters = hyperparameters_list[args.process_id]
-    args.alg, args.env, args.num_expert_trajs, args.d_step, args.num_particles, args.timesteps_per_batch, args.seed \
+    hyperparameters = list(hyperparameters_list[args.process_id])
+    args.alg, args.env, \
+    args.use_classifier_logsumexp, \
+    args.num_expert_trajs, args.d_step, args.num_particles, args.timesteps_per_batch, args.seed \
         = hyperparameters
+
+    if args.alg == 'gail':
+        hyperparameters[2] = args.use_classifier_logsumexp = False
+    if args.env == 'Humanoid-v1':
+        hyperparameters[3] = args.num_expert_trajs = 240
+        max_iters = 15001
+    elif args.env == 'Ant-v1':
+        max_iters = 10001
 
     additional_path = os.path.join(*[str(h) for h in hyperparameters])
     args.save_path = os.path.join(args.save_path, additional_path)
 
-    print(args.__dict__['alg'])
+    # FILTERING: if some condition is satisfied, do not run.
+    if os.path.exists(args.save_path):
+        assert False
+
     interpreter = '/home/wsjeon/anaconda3/envs/bgail/bin/python '
-    command = interpreter + 'run.py'
-    for key in ['alg', 'env', 'num_expert_trajs', 'd_step', 'num_particles', 'timesteps_per_batch', 'seed', 'save_path']:
+    command = interpreter + 'run.py' + ' --max_iters={}'.format(str(max_iters))
+    for key in ['alg', 'env',
+                'use_classifier_logsumexp',
+                'num_expert_trajs', 'd_step', 'num_particles', 'timesteps_per_batch', 'seed', 'save_path']:
         command += ' --' + key + '={}'.format(str(args.__dict__[key]))
 
     call(command, shell=True, executable='/bin/bash')
