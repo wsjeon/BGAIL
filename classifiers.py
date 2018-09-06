@@ -109,11 +109,9 @@ class TransitionClassifier(object):
             gradients_list.append(gradients)
 
             if self.env_id.split('-')[0] in ['MountainCar']:
-                labels = tf.ones_like(logits['a'])
-                reward_ops.append(- tf.nn.sigmoid_cross_entropy_with_logits(logits=logits['a'], labels=labels))
+                reward_ops.append(tf.log(tf.clip_by_value(tf.nn.sigmoid(logits['a']), 1e-8, 1.0)))
             else:
-                labels = tf.zeros_like(logits['a'])
-                reward_ops.append(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits['a'], labels=labels))
+                reward_ops.append(-tf.log(tf.clip_by_value(1.-tf.nn.sigmoid(logits['a']), 1e-8, 1.0)))
 
             if use_reward_logsumexp:
                 reward_op = tf.reduce_logsumexp(tf.concat(reward_ops, axis=1), axis=1) - tf.log(float(self.num_particles))
