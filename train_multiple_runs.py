@@ -27,14 +27,14 @@ def main():
     argparser = arg_parser_of_interest()
     args, _ = argparser.parse_known_args()
 
-    alg = ['bgail', 'gail']  # 2
-    env = ['Hopper-v1', 'Walker2d-v1', 'HalfCheetah-v1', 'Ant-v1', 'Humanoid-v1']  # 5
-    use_classifier_logsumexp = [True] # 1
+    alg = ['bgail']  # 1
+    env = ['Hopper-v1']  # 1
+    use_classifier_logsumexp = [True, False] # 2
     num_expert_trajs = [25]  # 1
     d_step = [5, 10]  # 2
     num_particles = [1, 5, 10]  # 3
     timesteps_per_batch = [1000]  # 1
-    seed = list(range(5))  # 5  --->   150 Processes in total
+    seed = list(range(5))  # 5  --->   60 Processes in total
 
     hyperparameters_list = list(itertools.product(alg, env,
                                                   use_classifier_logsumexp,
