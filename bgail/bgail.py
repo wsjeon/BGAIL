@@ -332,7 +332,7 @@ def learn(*,
     # Prepare for rollouts
     # ----------------------------------------
     if load_path is not None:
-        seg_gen = traj_segment_generator(pi, env, timesteps_per_batch, stochastic=False, render=render)
+        seg_gen = traj_segment_generator(pi, env, 1, stochastic=False, render=render)
     else:
         seg_gen = traj_segment_generator(pi, env, timesteps_per_batch, stochastic=True, render=render)
     seg_gen_e = expert_traj_segment_generator(env, expert_trajs_path, timesteps_per_batch, num_expert_trajs)
@@ -370,7 +370,9 @@ def learn(*,
 
         if load_path is not None:
             iters_so_far += 1
-            print(seg["ep_true_rets"])
+            logger.record_tabular("EpRew", int(np.mean(seg["ep_true_rets"])))
+            logger.record_tabular("EpLen", int(np.mean(seg["ep_lens"])))
+            logger.dump_tabular()
             continue
 
         seg["rew"] = D.get_reward(seg["ob"], seg["ac"])
