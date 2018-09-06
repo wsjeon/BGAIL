@@ -217,7 +217,8 @@ def learn(*,
         raise NotImplementedError
     rank = MPI.COMM_WORLD.Get_rank()
 
-    U.get_session(config=tf.ConfigProto(allow_soft_placement=True))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.49)
+    U.get_session(config=tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options))
 
     policy = build_policy(env, policy_network, value_network='copy', **policy_network_kwargs)
     set_global_seeds(seed)
