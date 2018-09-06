@@ -12,6 +12,6 @@ when_to_transfer_output=ON_EXIT_OR_EVICT
 #log=/home/wsjeon/condor/log/log.$(Process).out
 error=/home/wsjeon/condor/error/error.$(Process).out
 
-RequestMemory = 30000
-RequestCpus = 4
+RequestMemory = 15000
+RequestCpus = 2
 queue 300

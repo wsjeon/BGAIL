@@ -12,7 +12,7 @@ def plot(load_path):
     env = ['Hopper-v1', 'Walker2d-v1', 'HalfCheetah-v1']  # 1
     num_expert_trajs = [25]  # 1
     d_step = [5, 10]  # 2
-    num_particles = [1, 5, 10]  # 3
+    num_particles = [1, 5, 9]  # 3
     timesteps_per_batch = [1000]  # 1
     seed = list(range(5))  # 5  --->   900 Processes in total
 
@@ -22,7 +22,7 @@ def plot(load_path):
                                                   timesteps_per_batch))
 
     num_colors = int(len(hyperparameters_list) / len(env) / len(alg))
-    cm = plt.get_cmap('gist_rainbow')
+    cm = plt.get_cmap('brg')
     colors = [cm(i/num_colors) for i in range(num_colors)] * len(env) * len(alg)
 
     for hyperparameters in hyperparameters_list:
