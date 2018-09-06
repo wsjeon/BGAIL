@@ -63,7 +63,9 @@ def main():
 
     interpreter = '/home/wsjeon/anaconda3/envs/bgail/bin/python '
     command = interpreter + 'run.py'
-    for key in ['alg', 'env', 'num_expert_trajs', 'd_step', 'num_particles', 'timesteps_per_batch', 'seed', 'save_path']:
+    for key in ['alg', 'env',
+                'use_classifier_logsumexp',
+                'num_expert_trajs', 'd_step', 'num_particles', 'timesteps_per_batch', 'seed', 'save_path']:
         command += ' --' + key + '={}'.format(str(args.__dict__[key]))
 
     call(command, shell=True, executable='/bin/bash')
