@@ -35,6 +35,3 @@ We use the expert trajectories by using the code given by [openai/imitation](htt
 python run.py 
 ``` 
 will run BGAIL in default setting (see `bgail/defaults.py`.)
-
-## Outputs
-
