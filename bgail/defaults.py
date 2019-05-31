@@ -24,7 +24,7 @@ def classic_control():
         d_stepsize=0.01,
         normalize_observations=True,
         observation_dependent_var=True,
-        use_classifier_logsumexp=True,
+        use_classifier_logsumexp=False,
         use_reward_logsumexp=False,
         use_svgd=True
     )
@@ -53,7 +53,7 @@ def mujoco():
         d_stepsize=0.01,
         normalize_observations=True,
         observation_dependent_var=True,
-        use_classifier_logsumexp=True,
+        use_classifier_logsumexp=False,
         use_reward_logsumexp=False,
         use_svgd=True
     )
