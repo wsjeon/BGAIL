@@ -18,6 +18,8 @@
     - Baseline implementation of GAIL
 -   [wsjeon/SVGD](https://github.com/wsjeon/SVGD)
     - TensorFlow implementation of Stein variational gradient descent (SVGD)
+-   BGAIL paper
+    - [link](https://papers.nips.cc/paper/7972-a-bayesian-approach-to-generative-adversarial-imitation-learning.pdf)
 
 ## Usage
 ### Download expert trajectories.
